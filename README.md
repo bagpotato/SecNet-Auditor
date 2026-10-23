@@ -1,26 +1,26 @@
 # 🛡️ SecNet-Auditor
 
-Suite modular de auditoría de red, hardening y monitorización defensiva para servidores **Ubuntu/Debian**, con panel web local (Flask). Proyecto formativo para el ciclo SMX.
+Modular network audit, hardening and defensive monitoring suite for **Ubuntu/Debian** servers, with a local web dashboard (Flask). Educational project for the SMX course.
 
-> ⚠️ **Solo lectura**: la herramienta *audita*, nunca modifica el firewall, usuarios ni permisos. Las acciones correctoras se muestran como sugerencias. Úsala únicamente en sistemas propios o autorizados.
+> ⚠️ **Read-only**: the tool *audits* and never modifies the firewall, users or permissions. Corrective actions are shown as suggestions only. Use it only on systems you own or are authorized to audit.
 
-## Estructura
+## Structure
 
 ```
 SecNet-Auditor/
-├── app.py                  # Servidor Flask y API JSON
-├── config.json             # Parámetros ajustables
+├── app.py                  # Flask server and JSON API
+├── config.json             # Adjustable settings
 ├── modules/
 │   ├── network_check.py    # Netplan, DNS, interfaces (ip link)
-│   ├── hardening.py        # UFW, UID 0, permisos octales
-│   └── log_monitor.py      # SIEM ligero (regex sobre auth.log)
+│   ├── hardening.py        # UFW, UID 0, octal permissions
+│   └── log_monitor.py      # Lightweight SIEM (regex over auth.log)
 └── templates/index.html    # Dashboard (Bootstrap 5)
 ```
 
-## Requisitos
+## Requirements
 
-- Ubuntu/Debian con Python 3.8+
-- `iproute2` (comando `ip`), opcionalmente `ufw` y Netplan
+- Ubuntu/Debian with Python 3.8+
+- `iproute2` (`ip` command), optionally `ufw` and Netplan
 - Flask
 
 ```bash
@@ -30,57 +30,57 @@ python3 -m venv venv && source venv/bin/activate
 pip install flask
 ```
 
-## Ejecución
+## Running
 
 ```bash
-# Con privilegios limitados (algunos datos aparecerán como "sin acceso")
+# Limited privileges (some data will show as "no access")
 python app.py
 
-# Auditoría completa (UFW, auth.log, /etc/netplan, /etc/shadow...)
+# Full audit (UFW, auth.log, /etc/netplan, /etc/shadow...)
 sudo venv/bin/python app.py
 ```
 
-Abre `http://127.0.0.1:5000` y pulsa **Ejecutar Auditoría Completa**. La auditoría también se lanza al cargar la página.
+Open `http://127.0.0.1:5000` and click **Run Full Audit**. The audit also runs when the page loads.
 
-> Alternativa sin sudo: añade tu usuario al grupo `adm` (`sudo usermod -aG adm $USER`) para leer `/var/log/auth.log`.
+> Alternative without sudo: add your user to the `adm` group (`sudo usermod -aG adm $USER`) to read `/var/log/auth.log`.
 
-## Configuración (`config.json`)
+## Configuration (`config.json`)
 
-| Clave | Descripción |
+| Key | Description |
 |---|---|
-| `server.host` / `server.port` | Dirección y puerto (por defecto solo localhost) |
-| `ssh.failed_attempts_threshold` | Intentos fallidos desde una IP para generar alerta |
-| `ssh.auth_log_path` | Ruta del log (`/var/log/auth.log`) |
-| `ssh.lines_to_analyze` | Últimas N líneas a analizar |
-| `network.netplan_dir`, `network.resolv_conf`, `network.dns_test_host` | Rutas y host de prueba DNS |
-| `hardening.critical_files` | Archivo → permisos octales máximos esperados |
+| `server.host` / `server.port` | Bind address and port (localhost only by default) |
+| `ssh.failed_attempts_threshold` | Failed attempts from one IP before raising an alert |
+| `ssh.auth_log_path` | Log path (`/var/log/auth.log`) |
+| `ssh.lines_to_analyze` | Analyze the last N lines |
+| `network.netplan_dir`, `network.resolv_conf`, `network.dns_test_host` | Paths and DNS test host |
+| `hardening.critical_files` | File → maximum expected octal permissions |
 
-El fichero se relee en cada auditoría: no hace falta reiniciar.
+The file is re-read on every audit: no restart needed.
 
 ## API
 
-| Ruta | Contenido |
+| Route | Content |
 |---|---|
 | `GET /` | Dashboard |
-| `GET /api/audit` | Auditoría completa |
-| `GET /api/network` · `/api/hardening` · `/api/logs` | Módulos por separado |
+| `GET /api/audit` | Full audit |
+| `GET /api/network` · `/api/hardening` · `/api/logs` | Individual modules |
 
-## Qué detecta
+## What it detects
 
-- **Red**: YAML de Netplan (DHCP, IPs, gateway, permisos, tabuladores), nameservers y prueba de resolución real, interfaces y su estado.
-- **Hardening**: UFW activo/inactivo, cuentas con UID 0 distintas de root, permisos más permisivos de lo esperado.
-- **Logs**: fuerza bruta SSH por IP (`Failed password`, `Invalid user`, `authentication failure`). Severidad ALTA/CRÍTICA; se marca si la IP llegó a autenticarse con éxito (`Accepted`).
+- **Network**: Netplan YAML (DHCP, IPs, gateway, permissions, tabs), nameservers and a real resolution test, interfaces and their state.
+- **Hardening**: UFW active/inactive, non-root accounts with UID 0, permissions more permissive than expected.
+- **Logs**: SSH brute force per IP (`Failed password`, `Invalid user`, `authentication failure`). Severity HIGH/CRITICAL; flagged if the IP ever authenticated successfully (`Accepted`).
 
-## Seguridad del propio panel
+## Dashboard security
 
-Escucha solo en `127.0.0.1` y no tiene autenticación. **No lo expongas** a la red (`0.0.0.0`) sin un proxy inverso con login y TLS. Si usas `sudo`, recuerda que el servidor corre como root.
+It listens on `127.0.0.1` only and has no authentication. **Do not expose it** to the network (`0.0.0.0`) without a reverse proxy with login and TLS. If you use `sudo`, remember the server runs as root.
 
-## Resolución de problemas
+## Troubleshooting
 
-- *"Sin permisos para leer auth.log"* → usa `sudo` o el grupo `adm`.
-- *Log inexistente* → en sistemas con journald puro instala `rsyslog`.
-- *UFW pide root* → ejecuta con `sudo`.
+- *"No permission to read auth.log"* → use `sudo` or the `adm` group.
+- *Missing log* → on pure-journald systems install `rsyslog`.
+- *UFW asks for root* → run with `sudo`.
 
-## Ideas de ampliación (ejercicios SMX)
+## Extension ideas (SMX exercises)
 
-Auditoría de `sshd_config`, puertos abiertos (`ss -tulpn`), exportación de informes, bloqueo asistido con confirmación.
+`sshd_config` audit, open ports (`ss -tulpn`), report export, assisted blocking with confirmation.

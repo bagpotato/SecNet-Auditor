@@ -1,35 +1,35 @@
-"""Módulo de hardening: UFW, usuarios UID 0 y permisos de archivos críticos."""
+"""Hardening checks: UFW, UID 0 users and critical file permissions."""
 import os
 import subprocess
 
 
 def check_ufw():
-    """Comprueba el estado de UFW (requiere root para resultado completo). Solo lectura."""
+    """Check UFW status (needs root for full results). Read-only."""
     res = {"status": "WARN", "active": None, "rules": [], "message": ""}
     try:
         r = subprocess.run(["ufw", "status", "verbose"], capture_output=True, text=True, timeout=8)
     except FileNotFoundError:
-        res.update(status="ERROR", message="UFW no está instalado")
+        res.update(status="ERROR", message="UFW is not installed")
         return res
     except subprocess.TimeoutExpired:
-        res["message"] = "Tiempo de espera agotado"
+        res["message"] = "Timed out"
         return res
     out = (r.stdout + r.stderr).strip()
     if r.returncode != 0 and "root" in out.lower():
-        res["message"] = "Se requieren privilegios de root (sudo) para consultar el firewall"
+        res["message"] = "Root privileges (sudo) are required to query the firewall"
         return res
     if "Status: active" in out:
-        res.update(status="OK", active=True, message="Firewall activo")
+        res.update(status="OK", active=True, message="Firewall active")
         res["rules"] = [l.strip() for l in out.splitlines()[3:] if l.strip() and not l.startswith("--")]
     elif "inactive" in out:
-        res.update(status="ERROR", active=False, message="Firewall INACTIVO: actívalo (ver README)")
+        res.update(status="ERROR", active=False, message="Firewall INACTIVE: enable it (see README)")
     else:
-        res["message"] = out or "Estado desconocido"
+        res["message"] = out or "Unknown status"
     return res
 
 
 def check_uid0():
-    """Busca cuentas con UID 0 distintas de root."""
+    """Find accounts with UID 0 other than root."""
     res = {"status": "OK", "uid0_users": [], "suspicious": [], "message": ""}
     try:
         with open("/etc/passwd", "r", encoding="utf-8") as fh:
@@ -43,14 +43,14 @@ def check_uid0():
         res.update(status="ERROR", message=str(e))
         return res
     if res["suspicious"]:
-        res.update(status="ERROR", message="Usuarios con UID 0 ocultos: " + ", ".join(res["suspicious"]))
+        res.update(status="ERROR", message="Hidden UID 0 users: " + ", ".join(res["suspicious"]))
     else:
-        res["message"] = "Solo root tiene UID 0"
+        res["message"] = "Only root has UID 0"
     return res
 
 
 def check_permissions(cfg):
-    """Compara los permisos octales con los esperados (o más restrictivos)."""
+    """Compare octal permissions against the expected ones (or stricter)."""
     files = cfg.get("hardening", {}).get("critical_files", {})
     rows, worst = [], "OK"
     for path, expected in files.items():
@@ -58,13 +58,13 @@ def check_permissions(cfg):
         try:
             actual = oct(os.stat(path).st_mode & 0o777)[2:].zfill(3)
             row["actual"] = actual
-            # Inseguro si concede algún bit que el esperado no concede
+            # Insecure if it grants any bit the expected mode does not
             if int(actual, 8) & ~int(expected, 8):
-                row.update(status="ERROR", note=f"Más permisivo de lo esperado: ajustar a {expected}")
+                row.update(status="ERROR", note=f"More permissive than expected: set to {expected}")
         except FileNotFoundError:
-            row.update(status="INFO", note="No existe")
+            row.update(status="INFO", note="Does not exist")
         except PermissionError:
-            row.update(status="WARN", note="Sin acceso")
+            row.update(status="WARN", note="No access")
         if row["status"] == "ERROR":
             worst = "ERROR"
         elif row["status"] == "WARN" and worst == "OK":

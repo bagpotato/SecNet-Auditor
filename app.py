@@ -1,4 +1,4 @@
-"""SecNet-Auditor - Servidor web Flask local."""
+"""SecNet-Auditor - Local Flask web server."""
 import json
 import os
 from datetime import datetime
@@ -14,21 +14,21 @@ app = Flask(__name__)
 
 
 def load_config():
-    """Carga config.json (se relee en cada petición para aplicar cambios al vuelo)."""
+    """Load config.json (re-read on every request so changes apply immediately)."""
     try:
         with open(os.path.join(BASE, "config.json"), encoding="utf-8") as fh:
             return json.load(fh)
     except Exception as e:  # noqa: BLE001
-        app.logger.error("config.json inválido: %s", e)
+        app.logger.error("Invalid config.json: %s", e)
         return {}
 
 
 def safe(fn, *a):
-    """Evita que un fallo en un módulo tumbe toda la auditoría."""
+    """Keep a failing module from breaking the whole audit."""
     try:
         return fn(*a)
     except Exception as e:  # noqa: BLE001
-        return {"status": "ERROR", "message": f"Excepción: {e}"}
+        return {"status": "ERROR", "message": f"Exception: {e}"}
 
 
 @app.route("/")

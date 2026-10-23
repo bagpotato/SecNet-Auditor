@@ -1,4 +1,4 @@
-"""Módulo de verificación de red: Netplan, DNS e interfaces."""
+"""Network checks: Netplan, DNS and interfaces."""
 import glob
 import json
 import os
@@ -7,28 +7,28 @@ import subprocess
 
 
 def _run(cmd, timeout=8):
-    """Ejecuta un comando de forma segura; devuelve (ok, salida)."""
+    """Run a command safely; returns (ok, output)."""
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         return r.returncode == 0, (r.stdout or r.stderr).strip()
     except FileNotFoundError:
-        return False, f"Comando no encontrado: {cmd[0]}"
+        return False, f"Command not found: {cmd[0]}"
     except subprocess.TimeoutExpired:
-        return False, "Tiempo de espera agotado"
+        return False, "Timed out"
     except Exception as e:  # noqa: BLE001
         return False, str(e)
 
 
 def check_netplan(cfg):
-    """Lista los YAML de Netplan y comprueba sintaxis básica y permisos."""
+    """List Netplan YAML files and check basic syntax and permissions."""
     directory = cfg.get("network", {}).get("netplan_dir", "/etc/netplan")
     result = {"status": "OK", "files": [], "message": ""}
     if not os.path.isdir(directory):
-        result.update(status="WARN", message=f"{directory} no existe (¿no es Ubuntu/Netplan?)")
+        result.update(status="WARN", message=f"{directory} does not exist (not Ubuntu/Netplan?)")
         return result
     files = sorted(glob.glob(os.path.join(directory, "*.yaml")))
     if not files:
-        result.update(status="WARN", message="No hay archivos .yaml de Netplan")
+        result.update(status="WARN", message="No Netplan .yaml files found")
         return result
     for f in files:
         info = {"file": f, "dhcp": None, "addresses": [], "gateway": None,
@@ -36,11 +36,11 @@ def check_netplan(cfg):
         try:
             info["perms"] = oct(os.stat(f).st_mode & 0o777)[2:]
             if int(info["perms"], 8) & 0o077:
-                info["issues"].append("Permisos demasiado abiertos (recomendado 600)")
+                info["issues"].append("Permissions too open (600 recommended)")
             with open(f, "r", encoding="utf-8") as fh:
                 content = fh.read()
             if "\t" in content:
-                info["issues"].append("Contiene tabuladores (YAML inválido)")
+                info["issues"].append("Contains tabs (invalid YAML)")
             m = re.search(r"dhcp4:\s*(true|false|yes|no)", content, re.I)
             if m:
                 info["dhcp"] = m.group(1).lower() in ("true", "yes")
@@ -48,7 +48,7 @@ def check_netplan(cfg):
             g = re.search(r"(?:gateway4|via):\s*([\d.]+)", content)
             info["gateway"] = g.group(1) if g else None
         except PermissionError:
-            info["issues"].append("Sin permisos de lectura (ejecuta con sudo)")
+            info["issues"].append("No read permission (run with sudo)")
         except Exception as e:  # noqa: BLE001
             info["issues"].append(f"Error: {e}")
         if info["issues"]:
@@ -58,7 +58,7 @@ def check_netplan(cfg):
 
 
 def check_dns(cfg):
-    """Lee resolv.conf y prueba una resolución real."""
+    """Read resolv.conf and run a real resolution test."""
     net = cfg.get("network", {})
     path = net.get("resolv_conf", "/etc/resolv.conf")
     result = {"status": "OK", "nameservers": [], "search": [], "resolution_test": None, "message": ""}
@@ -74,16 +74,16 @@ def check_dns(cfg):
         result.update(status="ERROR", message=str(e))
         return result
     if not result["nameservers"]:
-        result.update(status="ERROR", message="No hay nameservers configurados")
+        result.update(status="ERROR", message="No nameservers configured")
     ok, _ = _run(["getent", "hosts", net.get("dns_test_host", "debian.org")])
-    result["resolution_test"] = "OK" if ok else "FALLO"
+    result["resolution_test"] = "OK" if ok else "FAIL"
     if not ok and result["status"] == "OK":
-        result.update(status="WARN", message="La resolución de nombres falla")
+        result.update(status="WARN", message="Name resolution is failing")
     return result
 
 
 def check_interfaces():
-    """Estado de interfaces con `ip -j link` (JSON) o fallback textual."""
+    """Interface status via `ip -j link` (JSON) with a text fallback."""
     result = {"status": "OK", "interfaces": [], "message": ""}
     ok, out = _run(["ip", "-j", "link"])
     if ok:
@@ -103,12 +103,12 @@ def check_interfaces():
             result["interfaces"].append({"name": m.group(1), "state": m.group(2), "mac": "-", "mtu": None})
     real = [i for i in result["interfaces"] if i["name"] != "lo"]
     if not any(i["state"] == "UP" for i in real):
-        result.update(status="WARN", message="Ninguna interfaz física está UP")
+        result.update(status="WARN", message="No physical interface is UP")
     return result
 
 
 def run_network_audit(cfg):
-    """Ejecuta toda la auditoría de red y calcula estado global."""
+    """Run the full network audit and compute the overall status."""
     data = {"netplan": check_netplan(cfg), "dns": check_dns(cfg), "interfaces": check_interfaces()}
     sts = [v["status"] for v in data.values()]
     data["status"] = "ERROR" if "ERROR" in sts else "WARN" if "WARN" in sts else "OK"

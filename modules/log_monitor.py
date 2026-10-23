@@ -1,4 +1,4 @@
-"""SIEM ligero: detección de fuerza bruta SSH en auth.log mediante regex."""
+"""Lightweight SIEM: SSH brute-force detection in auth.log using regex."""
 import re
 from collections import defaultdict, deque
 
@@ -12,7 +12,7 @@ SUCCESS = re.compile(r"Accepted \w+ for (?P<user>\S+) from " + IP)
 
 
 def tail(path, n):
-    """Lee las últimas n líneas sin cargar todo el fichero en memoria."""
+    """Read the last n lines without loading the whole file into memory."""
     with open(path, "r", encoding="utf-8", errors="replace") as fh:
         return list(deque(fh, maxlen=n))
 
@@ -27,10 +27,10 @@ def run_log_audit(cfg):
     try:
         lines = tail(path, n)
     except FileNotFoundError:
-        res.update(status="WARN", message=f"{path} no existe (¿usa journald?)")
+        res.update(status="WARN", message=f"{path} does not exist (journald only?)")
         return res
     except PermissionError:
-        res.update(status="WARN", message=f"Sin permisos para leer {path}. Usa sudo o el grupo 'adm'.")
+        res.update(status="WARN", message=f"No permission to read {path}. Use sudo or the 'adm' group.")
         return res
     res["lines_analyzed"] = len(lines)
     fails, users, last, success = defaultdict(int), defaultdict(set), {}, defaultdict(int)
@@ -53,16 +53,16 @@ def run_log_audit(cfg):
         row = {"ip": ip, "attempts": c, "users": sorted(users[ip])[:5], "last_seen": last.get(ip, "-"),
                "compromised": success.get(ip, 0) > 0}
         if c >= threshold:
-            row["severity"] = "CRÍTICA" if row["compromised"] or c >= threshold * 3 else "ALTA"
-            row["action"] = f"sudo {fw} deny from {ip}"  # solo sugerencia, nunca se ejecuta
+            row["severity"] = "CRITICAL" if row["compromised"] or c >= threshold * 3 else "HIGH"
+            row["action"] = f"sudo {fw} deny from {ip}"  # suggestion only, never executed
             res["alerts"].append(row)
         else:
-            row["severity"] = "BAJA"
+            row["severity"] = "LOW"
             res["suspicious"].append(row)
     if res["alerts"]:
-        res.update(status="ERROR", message=f"{len(res['alerts'])} IP(s) superan el umbral de {threshold} intentos")
+        res.update(status="ERROR", message=f"{len(res['alerts'])} IP(s) exceed the threshold of {threshold} attempts")
     elif res["suspicious"]:
-        res.update(status="WARN", message="Intentos fallidos por debajo del umbral")
+        res.update(status="WARN", message="Failed attempts below the threshold")
     else:
-        res["message"] = "Sin intentos fallidos detectados"
+        res["message"] = "No failed attempts detected"
     return res

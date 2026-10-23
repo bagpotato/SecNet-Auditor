@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-bs-theme="dark">
+<html lang="en" data-bs-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -24,11 +24,11 @@
   <div class="container">
     <span class="navbar-brand brand"><i class="bi bi-shield-lock-fill text-success"></i> SecNet<span class="text-success">-Auditor</span></span>
     <div class="d-flex align-items-center gap-3">
-      <small class="text-secondary" id="ts">Sin auditar</small>
+      <small class="text-secondary" id="ts">Not audited yet</small>
       <span class="badge" id="rootBadge"></span>
       <button class="btn btn-success" id="runBtn" onclick="runAudit()">
         <span class="spinner-border spinner-border-sm d-none" id="spin"></span>
-        <i class="bi bi-play-fill"></i> Ejecutar Auditoría Completa
+        <i class="bi bi-play-fill"></i> Run Full Audit
       </button>
     </div>
   </div>
@@ -37,23 +37,23 @@
 <div class="container pb-5">
   <div id="alertBox"></div>
 
-  <!-- Tarjetas resumen -->
+  <!-- Summary cards -->
   <div class="row g-3 mb-4">
     <div class="col-md-4"><div class="card card-sum st-NONE p-3" id="c-net">
-      <div class="text-secondary"><i class="bi bi-hdd-network"></i> Estado de Red</div>
-      <div class="big" id="v-net">—</div><small class="text-secondary" id="d-net">Pendiente</small></div></div>
+      <div class="text-secondary"><i class="bi bi-hdd-network"></i> Network Status</div>
+      <div class="big" id="v-net">—</div><small class="text-secondary" id="d-net">Pending</small></div></div>
     <div class="col-md-4"><div class="card card-sum st-NONE p-3" id="c-fw">
       <div class="text-secondary"><i class="bi bi-fire"></i> Firewall / Hardening</div>
-      <div class="big" id="v-fw">—</div><small class="text-secondary" id="d-fw">Pendiente</small></div></div>
+      <div class="big" id="v-fw">—</div><small class="text-secondary" id="d-fw">Pending</small></div></div>
     <div class="col-md-4"><div class="card card-sum st-NONE p-3" id="c-bf">
-      <div class="text-secondary"><i class="bi bi-bug-fill"></i> Alertas de Fuerza Bruta</div>
-      <div class="big" id="v-bf">—</div><small class="text-secondary" id="d-bf">Pendiente</small></div></div>
+      <div class="text-secondary"><i class="bi bi-bug-fill"></i> Brute-Force Alerts</div>
+      <div class="big" id="v-bf">—</div><small class="text-secondary" id="d-bf">Pending</small></div></div>
   </div>
 
-  <!-- Pestañas -->
+  <!-- Tabs -->
   <ul class="nav nav-tabs mb-3" role="tablist">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#t-logs"><i class="bi bi-exclamation-triangle"></i> Alertas SSH</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-net"><i class="bi bi-diagram-3"></i> Red</button></li>
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#t-logs"><i class="bi bi-exclamation-triangle"></i> SSH Alerts</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-net"><i class="bi bi-diagram-3"></i> Network</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-hard"><i class="bi bi-shield-check"></i> Hardening</button></li>
   </ul>
 
@@ -61,12 +61,12 @@
     <div class="tab-pane fade show active" id="t-logs">
       <div class="panel p-3">
         <div class="d-flex justify-content-between mb-2">
-          <h6 class="mb-0">IPs sospechosas / candidatas a bloqueo</h6>
-          <input class="form-control form-control-sm w-25" id="filterIp" placeholder="Filtrar IP..." oninput="filterRows()">
+          <h6 class="mb-0">Suspicious IPs / block candidates</h6>
+          <input class="form-control form-control-sm w-25" id="filterIp" placeholder="Filter IP..." oninput="filterRows()">
         </div>
         <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0" id="tblLogs">
-          <thead><tr><th>IP</th><th>Intentos</th><th>Usuarios probados</th><th>Última vez</th><th>Severidad</th><th>Acción sugerida</th></tr></thead>
-          <tbody><tr><td colspan="6" class="text-secondary">Ejecuta la auditoría.</td></tr></tbody></table></div>
+          <thead><tr><th>IP</th><th>Attempts</th><th>Users tried</th><th>Last seen</th><th>Severity</th><th>Suggested action</th></tr></thead>
+          <tbody><tr><td colspan="6" class="text-secondary">Run the audit.</td></tr></tbody></table></div>
         <small class="text-secondary d-block mt-2" id="logInfo"></small>
       </div>
     </div>
@@ -74,21 +74,21 @@
     <div class="tab-pane fade" id="t-net">
       <div class="row g-3">
         <div class="col-lg-6"><div class="panel p-3"><h6>Netplan</h6>
-          <div class="table-responsive"><table class="table table-sm mb-0" id="tblNetplan"><thead><tr><th>Archivo</th><th>DHCP</th><th>Direcciones</th><th>Gateway</th><th>Perm.</th><th>Estado</th></tr></thead><tbody></tbody></table></div>
+          <div class="table-responsive"><table class="table table-sm mb-0" id="tblNetplan"><thead><tr><th>File</th><th>DHCP</th><th>Addresses</th><th>Gateway</th><th>Perms</th><th>Status</th></tr></thead><tbody></tbody></table></div>
           <small class="text-secondary" id="netplanMsg"></small></div></div>
         <div class="col-lg-6"><div class="panel p-3"><h6>DNS (resolv.conf)</h6>
           <div id="dnsBox" class="term text-secondary">—</div></div></div>
         <div class="col-12"><div class="panel p-3"><h6>Interfaces (ip link)</h6>
-          <div class="table-responsive"><table class="table table-sm mb-0" id="tblIf"><thead><tr><th>Interfaz</th><th>Estado</th><th>MAC</th><th>MTU</th></tr></thead><tbody></tbody></table></div></div></div>
+          <div class="table-responsive"><table class="table table-sm mb-0" id="tblIf"><thead><tr><th>Interface</th><th>State</th><th>MAC</th><th>MTU</th></tr></thead><tbody></tbody></table></div></div></div>
       </div>
     </div>
 
     <div class="tab-pane fade" id="t-hard">
       <div class="row g-3">
         <div class="col-lg-6"><div class="panel p-3"><h6>UFW</h6><div id="ufwBox" class="term text-secondary">—</div></div></div>
-        <div class="col-lg-6"><div class="panel p-3"><h6>Usuarios con UID 0</h6><div id="uidBox" class="term text-secondary">—</div></div></div>
-        <div class="col-12"><div class="panel p-3"><h6>Permisos de archivos críticos</h6>
-          <div class="table-responsive"><table class="table table-sm mb-0" id="tblPerm"><thead><tr><th>Archivo</th><th>Esperado</th><th>Actual</th><th>Estado</th><th>Nota</th></tr></thead><tbody></tbody></table></div></div></div>
+        <div class="col-lg-6"><div class="panel p-3"><h6>UID 0 Users</h6><div id="uidBox" class="term text-secondary">—</div></div></div>
+        <div class="col-12"><div class="panel p-3"><h6>Critical File Permissions</h6>
+          <div class="table-responsive"><table class="table table-sm mb-0" id="tblPerm"><thead><tr><th>File</th><th>Expected</th><th>Actual</th><th>Status</th><th>Note</th></tr></thead><tbody></tbody></table></div></div></div>
       </div>
     </div>
   </div>
@@ -113,41 +113,41 @@ async function runAudit() {
     const r = await fetch('/api/audit'); if (!r.ok) throw new Error('HTTP ' + r.status);
     render(await r.json());
   } catch (e) {
-    $('alertBox').innerHTML = `<div class="alert alert-danger">Error al ejecutar la auditoría: ${esc(e.message)}</div>`;
+    $('alertBox').innerHTML = `<div class="alert alert-danger">Error running the audit: ${esc(e.message)}</div>`;
   } finally { btn.disabled = false; $('spin').classList.add('d-none'); }
 }
 
 function render(d) {
-  $('ts').textContent = 'Última auditoría: ' + d.timestamp;
+  $('ts').textContent = 'Last audit: ' + d.timestamp;
   $('rootBadge').className = 'badge text-bg-' + (d.is_root ? 'success' : 'warning');
-  $('rootBadge').textContent = d.is_root ? 'root' : 'sin root (datos limitados)';
+  $('rootBadge').textContent = d.is_root ? 'root' : 'no root (limited data)';
   const n = d.network, h = d.hardening, l = d.logs;
 
   card('net', n.status, n.status, `DNS: ${esc(n.dns?.resolution_test)} · ${n.interfaces?.interfaces?.length ?? 0} interfaces`);
   const ufw = h.ufw || {};
-  card('fw', h.status, ufw.active === true ? 'UFW activo' : ufw.active === false ? 'UFW inactivo' : 'UFW ?', ufw.message || '');
+  card('fw', h.status, ufw.active === true ? 'UFW active' : ufw.active === false ? 'UFW inactive' : 'UFW ?', ufw.message || '');
   const nAl = (l.alerts || []).length;
-  card('bf', l.status, nAl + ' alerta' + (nAl === 1 ? '' : 's'), l.message || '');
+  card('bf', l.status, nAl + ' alert' + (nAl === 1 ? '' : 's'), l.message || '');
 
   // Logs
   const rows = [...(l.alerts || []), ...(l.suspicious || [])];
-  const sev = {'CRÍTICA':'danger','ALTA':'warning','BAJA':'secondary'};
+  const sev = {'CRITICAL':'danger','HIGH':'warning','LOW':'secondary'};
   $('tblLogs').querySelector('tbody').innerHTML = rows.length ? rows.map(r => `
-    <tr data-ip="${esc(r.ip)}"><td><code>${esc(r.ip)}</code>${r.compromised ? ' <i class="bi bi-exclamation-octagon-fill text-danger" title="Login exitoso desde esta IP"></i>' : ''}</td>
+    <tr data-ip="${esc(r.ip)}"><td><code>${esc(r.ip)}</code>${r.compromised ? ' <i class="bi bi-exclamation-octagon-fill text-danger" title="Successful login from this IP"></i>' : ''}</td>
     <td>${r.attempts}</td><td>${esc((r.users||[]).join(', '))}</td><td>${esc(r.last_seen)}</td>
     <td><span class="badge text-bg-${sev[r.severity]}">${r.severity}</span></td>
     <td class="term">${r.action ? esc(r.action) : '—'}</td></tr>`).join('')
-    : `<tr><td colspan="6" class="text-secondary">${esc(l.message || 'Sin datos')}</td></tr>`;
-  $('logInfo').textContent = `Log: ${l.log_path} · ${l.lines_analyzed} líneas · ${l.total_failed} fallos · umbral ${l.threshold}`;
+    : `<tr><td colspan="6" class="text-secondary">${esc(l.message || 'No data')}</td></tr>`;
+  $('logInfo').textContent = `Log: ${l.log_path} · ${l.lines_analyzed} lines · ${l.total_failed} failures · threshold ${l.threshold}`;
 
-  // Red
+  // Network
   const np = n.netplan || {};
   $('tblNetplan').querySelector('tbody').innerHTML = (np.files||[]).map(f => `<tr><td class="term">${esc(f.file)}</td>
     <td>${f.dhcp === null ? '-' : f.dhcp}</td><td>${esc((f.addresses||[]).join(', '))}</td><td>${esc(f.gateway)}</td>
     <td>${esc(f.perms)}</td><td>${f.issues.length ? badge('WARN') + '<br><small>' + f.issues.map(esc).join('<br>') + '</small>' : badge('OK')}</td></tr>`).join('');
   $('netplanMsg').textContent = np.message || '';
   const dns = n.dns || {};
-  $('dnsBox').innerHTML = `${badge(dns.status)} ${esc(dns.message)}<br>Nameservers: ${esc((dns.nameservers||[]).join(', ') || 'ninguno')}<br>Búsqueda: ${esc((dns.search||[]).join(', '))}<br>Prueba de resolución: ${esc(dns.resolution_test)}`;
+  $('dnsBox').innerHTML = `${badge(dns.status)} ${esc(dns.message)}<br>Nameservers: ${esc((dns.nameservers||[]).join(', ') || 'none')}<br>Search: ${esc((dns.search||[]).join(', '))}<br>Resolution test: ${esc(dns.resolution_test)}`;
   $('tblIf').querySelector('tbody').innerHTML = (n.interfaces?.interfaces||[]).map(i => `<tr><td>${esc(i.name)}</td>
     <td>${badge(i.state === 'UP' ? 'OK' : i.state === 'UNKNOWN' ? 'INFO' : 'WARN').replace(/>[A-Z]+</, '>' + esc(i.state) + '<')}</td><td class="term">${esc(i.mac)}</td><td>${esc(i.mtu)}</td></tr>`).join('');
 
@@ -158,7 +158,7 @@ function render(d) {
   $('tblPerm').querySelector('tbody').innerHTML = ((h.permissions||{}).files||[]).map(f => `<tr><td class="term">${esc(f.file)}</td>
     <td>${esc(f.expected)}</td><td>${esc(f.actual)}</td><td>${badge(f.status)}</td><td><small>${esc(f.note)}</small></td></tr>`).join('');
 
-  if (!d.is_root) $('alertBox').innerHTML = '<div class="alert alert-warning py-2"><i class="bi bi-info-circle"></i> Ejecutando sin privilegios de root: UFW, auth.log y algunos archivos pueden no ser accesibles.</div>';
+  if (!d.is_root) $('alertBox').innerHTML = '<div class="alert alert-warning py-2"><i class="bi bi-info-circle"></i> Running without root privileges: UFW, auth.log and some files may be inaccessible.</div>';
 }
 
 function filterRows() {
