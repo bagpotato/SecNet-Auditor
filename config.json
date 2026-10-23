@@ -1,0 +1,24 @@
+{
+  "server": { "host": "127.0.0.1", "port": 5000, "debug": false },
+  "ssh": {
+    "failed_attempts_threshold": 5,
+    "auth_log_path": "/var/log/auth.log",
+    "lines_to_analyze": 2000
+  },
+  "network": {
+    "netplan_dir": "/etc/netplan",
+    "resolv_conf": "/etc/resolv.conf",
+    "dns_test_host": "debian.org"
+  },
+  "hardening": {
+    "critical_files": {
+      "/etc/passwd": "644",
+      "/etc/shadow": "640",
+      "/etc/group": "644",
+      "/etc/gshadow": "640",
+      "/etc/sudoers": "440",
+      "/etc/ssh/sshd_config": "644",
+      "/etc/crontab": "644"
+    }
+  }
+}
