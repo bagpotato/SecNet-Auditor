@@ -7,25 +7,67 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <style>
+  :root { --ok:#22c55e; --warn:#f59e0b; --err:#ef4444; --info:#38bdf8; --line:#1f2a3c; --panel:#0d1522; --muted:#8b9bb4; }
   body { background: radial-gradient(circle at top, #0f1b2d, #070b12 70%); min-height: 100vh; }
   .brand { font-family: monospace; letter-spacing: 1px; }
-  .card-sum { border: 1px solid #1f2a3c; background: #0d1522; transition: .2s; border-left-width: 5px; }
+  .card-sum { border: 1px solid var(--line); background: var(--panel); transition: .2s; border-left-width: 5px; }
   .card-sum:hover { transform: translateY(-3px); }
-  .st-OK { border-left-color: #22c55e; } .st-WARN { border-left-color: #f59e0b; }
-  .st-ERROR { border-left-color: #ef4444; } .st-NONE { border-left-color: #64748b; }
+  .st-OK { border-left-color: var(--ok); } .st-WARN { border-left-color: var(--warn); }
+  .st-ERROR { border-left-color: var(--err); } .st-NONE { border-left-color: #64748b; }
   .big { font-size: 2rem; font-weight: 700; }
-  .panel { background: #0d1522; border: 1px solid #1f2a3c; border-radius: .75rem; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: .75rem; }
   code { color: #7dd3fc; }
   .term { font-family: monospace; font-size: .85rem; }
+  .text-secondary { color: var(--muted) !important; }
+
+  /* Fix buttons */
+  .fix-wrap { display: inline-block; cursor: not-allowed; }
+  .fix-wrap .btn { pointer-events: none; }
+  .btn-fix { --bs-btn-color: var(--info); --bs-btn-border-color: #1e4a63; --bs-btn-hover-bg: #0e3247; --bs-btn-hover-border-color: var(--info); --bs-btn-hover-color:#e0f2fe; --bs-btn-active-bg:#0e3247; --bs-btn-active-color:#e0f2fe; --bs-btn-active-border-color:var(--info); white-space: nowrap; }
+  .btn-fix-locked { --bs-btn-color: var(--muted); --bs-btn-border-color: #2c3a52; --bs-btn-hover-bg:#16233a; --bs-btn-hover-color:#e2e8f0; --bs-btn-hover-border-color:#475b7c; white-space: nowrap; }
+
+  /* Diff */
+  pre.diff { background:#070b12; border:1px solid var(--line); border-radius:.5rem; padding:.75rem; max-height:16rem; overflow:auto; font-size:.8rem; margin:0; color:#cbd5e1; white-space:pre-wrap; word-break:break-word; }
+  .diff .add { color:#86efac; background:rgba(34,197,94,.12); display:block; }
+  .diff .del { color:#fca5a5; background:rgba(239,68,68,.12); display:block; }
+  .diff .ctx { display:block; }
+
+  /* Logs */
+  .chip { border:1px solid #2c3a52; background:transparent; color:var(--muted); border-radius:999px; padding:.2rem .8rem; font-size:.85rem; }
+  .chip:hover { color:#e2e8f0; border-color:#475b7c; }
+  .chip[aria-pressed="true"] { background:#10243a; border-color:var(--info); color:#e0f2fe; }
+  .log-list { font-family: monospace; font-size:.82rem; border:1px solid var(--line); border-radius:.5rem; overflow:hidden; background:#080d16; }
+  .log-row { display:grid; grid-template-columns: 10.5rem 4.5rem 8rem 1fr auto; gap:.75rem; padding:.35rem .75rem .35rem .6rem; border-left:4px solid transparent; border-bottom:1px solid #121b2b; align-items:start; }
+  .log-row:last-child { border-bottom:0; }
+  .log-row:hover { background:#0c1524; }
+  .log-row.lv-ERROR { border-left-color:var(--err); } .log-row.lv-WARN { border-left-color:var(--warn); } .log-row.lv-INFO { border-left-color:#2b6f8f; }
+  .log-time, .log-proc { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .log-msg { white-space:pre-wrap; word-break:break-word; }
+  .log-row mark { background:#facc15; color:#111827; padding:0 .1rem; border-radius:2px; }
+  .ip-link { background:none; border:0; border-bottom:1px dashed var(--info); color:#7dd3fc; padding:0; font:inherit; cursor:pointer; }
+  .ip-link:hover { color:#e0f2fe; background:#10243a; }
+  .copy-line { opacity:.35; } .log-row:hover .copy-line, .copy-line:focus-visible { opacity:1; }
+  @media (hover:none) { .copy-line { opacity:1; } }
+  @media (max-width: 767.98px) {
+    .log-row { grid-template-columns: 1fr auto; gap:.15rem .5rem; }
+    .log-row .log-time { grid-column:1; } .log-row .log-lvl { display:none; }
+    .log-row .log-proc { grid-column:1; } .log-row .log-msg { grid-column:1 / -1; grid-row:3; }
+    .log-row .copy-line { grid-column:2; grid-row:1 / span 2; }
+    .big { font-size: 1.6rem; }
+  }
+  .log-state { padding:2rem 1rem; text-align:center; color:var(--muted); }
+  .log-state i { font-size:1.6rem; display:block; margin-bottom:.4rem; }
+  @media (prefers-reduced-motion: reduce) { .card-sum { transition:none; } .card-sum:hover { transform:none; } }
 </style>
 </head>
 <body>
 <nav class="navbar border-bottom border-secondary-subtle mb-4">
-  <div class="container">
+  <div class="container flex-wrap gap-2">
     <span class="navbar-brand brand"><i class="bi bi-shield-lock-fill text-success"></i> SecNet<span class="text-success">-Auditor</span></span>
-    <div class="d-flex align-items-center gap-3">
+    <div class="d-flex align-items-center flex-wrap gap-2 gap-md-3">
       <small class="text-secondary" id="ts">Not audited yet</small>
       <span class="badge" id="rootBadge"></span>
+      <span id="userBox" class="d-flex align-items-center gap-2"></span>
       <button class="btn btn-success" id="runBtn" onclick="runAudit()">
         <span class="spinner-border spinner-border-sm d-none" id="spin"></span>
         <i class="bi bi-play-fill"></i> Run Full Audit
@@ -39,34 +81,40 @@
 
   <!-- Summary cards -->
   <div class="row g-3 mb-4">
-    <div class="col-md-4"><div class="card card-sum st-NONE p-3" id="c-net">
+    <div class="col-6 col-md-3"><div class="card card-sum st-NONE p-3 h-100" id="c-net">
       <div class="text-secondary"><i class="bi bi-hdd-network"></i> Network Status</div>
       <div class="big" id="v-net">—</div><small class="text-secondary" id="d-net">Pending</small></div></div>
-    <div class="col-md-4"><div class="card card-sum st-NONE p-3" id="c-fw">
+    <div class="col-6 col-md-3"><div class="card card-sum st-NONE p-3 h-100" id="c-svc">
+      <div class="text-secondary"><i class="bi bi-hdd-stack"></i> Services</div>
+      <div class="big" id="v-svc">—</div><small class="text-secondary" id="d-svc">Pending</small></div></div>
+    <div class="col-6 col-md-3"><div class="card card-sum st-NONE p-3 h-100" id="c-fw">
       <div class="text-secondary"><i class="bi bi-fire"></i> Firewall / Hardening</div>
       <div class="big" id="v-fw">—</div><small class="text-secondary" id="d-fw">Pending</small></div></div>
-    <div class="col-md-4"><div class="card card-sum st-NONE p-3" id="c-bf">
+    <div class="col-6 col-md-3"><div class="card card-sum st-NONE p-3 h-100" id="c-bf">
       <div class="text-secondary"><i class="bi bi-bug-fill"></i> Brute-Force Alerts</div>
       <div class="big" id="v-bf">—</div><small class="text-secondary" id="d-bf">Pending</small></div></div>
   </div>
 
   <!-- Tabs -->
-  <ul class="nav nav-tabs mb-3" role="tablist">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#t-logs"><i class="bi bi-exclamation-triangle"></i> SSH Alerts</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-net"><i class="bi bi-diagram-3"></i> Network</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-hard"><i class="bi bi-shield-check"></i> Hardening</button></li>
+  <ul class="nav nav-tabs mb-3 flex-nowrap overflow-auto" role="tablist" style="overflow-y:hidden">
+    <li class="nav-item"><button class="nav-link active text-nowrap" data-bs-toggle="tab" data-bs-target="#t-logs"><i class="bi bi-exclamation-triangle"></i> SSH Alerts</button></li>
+    <li class="nav-item"><button class="nav-link text-nowrap" data-bs-toggle="tab" data-bs-target="#t-net"><i class="bi bi-diagram-3"></i> Network</button></li>
+    <li class="nav-item"><button class="nav-link text-nowrap" data-bs-toggle="tab" data-bs-target="#t-svc"><i class="bi bi-hdd-stack"></i> Services</button></li>
+    <li class="nav-item"><button class="nav-link text-nowrap" data-bs-toggle="tab" data-bs-target="#t-hard"><i class="bi bi-shield-check"></i> Hardening</button></li>
+    <li class="nav-item"><button class="nav-link text-nowrap" id="tabLogView" data-bs-toggle="tab" data-bs-target="#t-logview"><i class="bi bi-journal-text"></i> Logs</button></li>
+    <li class="nav-item"><button class="nav-link text-nowrap" id="tabHist" data-bs-toggle="tab" data-bs-target="#t-hist"><i class="bi bi-clock-history"></i> Fix history</button></li>
   </ul>
 
   <div class="tab-content">
     <div class="tab-pane fade show active" id="t-logs">
       <div class="panel p-3">
-        <div class="d-flex justify-content-between mb-2">
+        <div class="d-flex flex-wrap gap-2 justify-content-between mb-2">
           <h6 class="mb-0">Suspicious IPs / block candidates</h6>
-          <input class="form-control form-control-sm w-25" id="filterIp" placeholder="Filter IP..." oninput="filterRows()">
+          <input class="form-control form-control-sm" style="max-width:14rem" id="filterIp" placeholder="Filter IP..." aria-label="Filter IP" oninput="filterRows()">
         </div>
         <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0" id="tblLogs">
-          <thead><tr><th>IP</th><th>Attempts</th><th>Users tried</th><th>Last seen</th><th>Severity</th><th>Suggested action</th></tr></thead>
-          <tbody><tr><td colspan="6" class="text-secondary">Run the audit.</td></tr></tbody></table></div>
+          <thead><tr><th>IP</th><th>Attempts</th><th>Users tried</th><th>Last seen</th><th>Severity</th><th>Suggested action</th><th>Fix</th></tr></thead>
+          <tbody><tr><td colspan="7" class="text-secondary">Run the audit.</td></tr></tbody></table></div>
         <small class="text-secondary d-block mt-2" id="logInfo"></small>
       </div>
     </div>
@@ -83,16 +131,146 @@
       </div>
     </div>
 
+    <div class="tab-pane fade" id="t-svc">
+      <div class="row g-3">
+        <div class="col-lg-6"><div class="panel p-3"><h6>SSH (sshd_config)</h6><div id="sshBox" class="term text-secondary">—</div></div></div>
+        <div class="col-lg-6"><div class="panel p-3"><h6>NTP / DHCP</h6><div id="ntpBox" class="term text-secondary">—</div></div></div>
+        <div class="col-12"><div class="panel p-3"><h6>Web server (HTTP/HTTPS)</h6><div id="webBox" class="term text-secondary">—</div></div></div>
+        <div class="col-12"><div class="panel p-3"><h6>Listening ports</h6>
+          <div class="table-responsive"><table class="table table-sm mb-0" id="tblPorts"><thead><tr><th>Proto</th><th>Address</th><th>Port</th><th>Exposed</th><th>Status</th><th>Note</th></tr></thead><tbody></tbody></table></div></div></div>
+      </div>
+    </div>
+
     <div class="tab-pane fade" id="t-hard">
       <div class="row g-3">
         <div class="col-lg-6"><div class="panel p-3"><h6>UFW</h6><div id="ufwBox" class="term text-secondary">—</div></div></div>
         <div class="col-lg-6"><div class="panel p-3"><h6>UID 0 Users</h6><div id="uidBox" class="term text-secondary">—</div></div></div>
         <div class="col-12"><div class="panel p-3"><h6>Critical File Permissions</h6>
-          <div class="table-responsive"><table class="table table-sm mb-0" id="tblPerm"><thead><tr><th>File</th><th>Expected</th><th>Actual</th><th>Status</th><th>Note</th></tr></thead><tbody></tbody></table></div></div></div>
+          <div class="table-responsive"><table class="table table-sm align-middle mb-0" id="tblPerm"><thead><tr><th>File</th><th>Expected</th><th>Actual</th><th>Status</th><th>Note</th><th>Fix</th></tr></thead><tbody></tbody></table></div></div></div>
+      </div>
+    </div>
+
+    <!-- Log viewer -->
+    <div class="tab-pane fade" id="t-logview">
+      <div class="panel p-3">
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label small text-secondary mb-1" for="logSource">Log</label>
+            <select class="form-select form-select-sm" id="logSource">
+              <option value="auth">Logins (auth)</option>
+              <option value="syslog">System (syslog)</option>
+              <option value="ssh">SSH service</option>
+              <option value="ufw">Firewall (ufw)</option>
+              <option value="fixes">Fixes made here</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3 col-lg-2">
+            <label class="form-label small text-secondary mb-1" for="logRange">Time</label>
+            <select class="form-select form-select-sm" id="logRange">
+              <option value="0">Any time</option>
+              <option value="1">Last hour</option>
+              <option value="24">Last 24 hours</option>
+              <option value="168">Last 7 days</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-6 col-lg-4">
+            <label class="form-label small text-secondary mb-1" for="logQ">Search text</label>
+            <input type="search" class="form-control form-control-sm" id="logQ" placeholder="e.g. Failed password" autocomplete="off">
+          </div>
+          <div class="col-12 col-md-6 col-lg-4">
+            <label class="form-label small text-secondary mb-1" for="logIp">Only this IP</label>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control" id="logIp" placeholder="e.g. 203.0.113.7" autocomplete="off" spellcheck="false">
+              <button class="btn btn-outline-secondary" type="button" id="logIpClear" title="Clear IP filter" aria-label="Clear IP filter"><i class="bi bi-x-lg"></i></button>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+          <div class="d-flex flex-wrap gap-2" role="group" aria-label="Severity">
+            <button type="button" class="chip" data-level="" aria-pressed="true">All</button>
+            <button type="button" class="chip" data-level="ERROR" aria-pressed="false">Errors</button>
+            <button type="button" class="chip" data-level="WARN" aria-pressed="false">Warnings</button>
+            <button type="button" class="chip" data-level="INFO" aria-pressed="false">Info</button>
+          </div>
+          <span id="logBlock"></span>
+          <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" role="switch" id="logAuto">
+              <label class="form-check-label small" for="logAuto">Refresh every 5 s</label>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="logReload"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="logDl"><i class="bi bi-download"></i> Download filtered</button>
+          </div>
+        </div>
+        <div id="logStatus" class="small text-secondary mb-2" role="status" aria-live="polite"></div>
+        <div id="logList" class="log-list"><div class="log-state"><i class="bi bi-journal-text"></i>Open this tab to load the log.</div></div>
+        <div class="text-center mt-3"><button type="button" class="btn btn-sm btn-outline-secondary d-none" id="logOlder"><i class="bi bi-arrow-down-short"></i> Load older lines</button></div>
+      </div>
+    </div>
+
+    <!-- Fix history -->
+    <div class="tab-pane fade" id="t-hist">
+      <div class="panel p-3">
+        <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+          <h6 class="mb-0">Fixes applied from this dashboard</h6>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="histReload"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        </div>
+        <small class="text-secondary d-block mb-2">Every fix keeps a backup. Undo puts the files back the way they were. The 20 most recent fixes can be undone.</small>
+        <div id="histBox" class="text-secondary">Open this tab to load the history.</div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Login dialog -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"><form class="modal-content" id="loginForm" autocomplete="off">
+    <div class="modal-header"><h5 class="modal-title" id="loginTitle"><i class="bi bi-person-lock"></i> Admin login</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body">
+      <p class="small text-secondary" id="loginHint">Log in to apply fixes and read raw logs. This is the admin password set with <code>python app.py --set-password</code>.</p>
+      <label class="form-label" for="loginPw">Password</label>
+      <input type="password" class="form-control" id="loginPw" autocomplete="current-password" required>
+      <div class="text-danger small mt-2" id="loginErr" role="alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button type="submit" class="btn btn-success" id="loginBtn">Log in</button>
+    </div>
+  </form></div>
+</div>
+
+<!-- Fix confirm dialog -->
+<div class="modal fade" id="fixModal" tabindex="-1" aria-labelledby="fixTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="fixTitle">Fix</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body">
+      <div id="fixLoading" class="text-secondary"><span class="spinner-border spinner-border-sm"></span> Preparing a preview. Nothing has changed yet.</div>
+      <div id="fixBody" class="d-none">
+        <div class="alert alert-info py-2 d-none" id="fixNotice"></div>
+        <h6>What is wrong</h6>
+        <p id="fixSummary"></p>
+        <div id="fixDiffWrap"><h6>What will change</h6>
+          <pre class="diff mb-3" id="fixDiff" tabindex="0" aria-label="Changes that will be made"></pre></div>
+        <div class="alert alert-warning py-2" id="fixRisk"></div>
+        <div class="form-check d-none" id="fixAckWrap">
+          <input class="form-check-input" type="checkbox" id="fixAck">
+          <label class="form-check-label" for="fixAck">I understand the risk and want to continue</label>
+        </div>
+      </div>
+      <div class="alert alert-danger py-2 mt-3 d-none" id="fixErr" role="alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button type="button" class="btn btn-info" id="fixApply" disabled>
+        <span class="spinner-border spinner-border-sm d-none" id="fixSpin"></span> <span id="fixApplyLbl">Apply fix</span></button>
+    </div>
+  </div></div>
+</div>
+
+<!-- Result toasts -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1100" id="toasts"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -100,9 +278,433 @@ const COLORS = {OK:'success', WARN:'warning', ERROR:'danger', INFO:'info'};
 const badge = s => `<span class="badge text-bg-${COLORS[s]||'secondary'}">${s}</span>`;
 const esc = t => String(t ?? '-').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $ = id => document.getElementById(id);
+const FIX_TITLES = {
+  'perms.fix_file':'Restrict file permissions', 'ntp.enable':'Turn on time synchronization',
+  'ssh.disable_root_login':'Disable root login over SSH', 'ssh.disable_password_auth':'Require SSH keys instead of passwords',
+  'ssh.disable_empty_passwords':'Forbid empty SSH passwords', 'ssh.limit_auth_tries':'Limit SSH login attempts',
+  'ufw.enable':'Turn on the firewall', 'ufw.block_ip':'Block an IP address'
+};
 
+/* ---------- Session, CSRF and POST helper ---------- */
+let S = {logged_in:false, fixes_enabled:false, is_root:false, csrf:''};
+let lastAudit = null;
+
+async function loadSession() {
+  try {
+    const r = await fetch('/api/session', {credentials:'same-origin'});
+    if (r.ok) S = Object.assign({logged_in:false, fixes_enabled:false, is_root:false, csrf:''}, await r.json());
+  } catch (e) { /* endpoint missing: stay read-only */ }
+  onSessionChange();
+}
+
+async function postJson(url, body, retry = true) {
+  let r, data = {};
+  try {
+    r = await fetch(url, {method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json', 'X-CSRF-Token': S.csrf || ''}, body: JSON.stringify(body || {})});
+  } catch (e) {
+    return {ok:false, status:0, data:{message:'Cannot reach the server. Check that SecNet-Auditor is still running.'}};
+  }
+  try { data = await r.json(); } catch (e) { data = {}; }
+  if (r.status === 403 && retry && /csrf/i.test(JSON.stringify(data))) { await loadSession(); return postJson(url, body, false); }
+  return {ok:r.ok, status:r.status, data};
+}
+const msgOf = (d, fallback) => (d && (d.message || d.error)) || fallback;
+
+function onSessionChange() {
+  const u = $('userBox');
+  if (S.logged_in) {
+    u.innerHTML = `<span class="badge text-bg-info"><i class="bi bi-person-check-fill"></i> Admin</span>
+      <button class="btn btn-sm btn-outline-secondary" id="logoutBtn">Log out</button>`;
+    $('logoutBtn').onclick = logout;
+  } else if (S.fixes_enabled) {
+    u.innerHTML = `<button class="btn btn-sm btn-outline-info" id="loginBtnTop"><i class="bi bi-box-arrow-in-right"></i> Log in</button>`;
+    $('loginBtnTop').onclick = () => openLogin();
+  } else {
+    u.innerHTML = `<span class="badge text-bg-secondary" title="Set an admin password with: python app.py --set-password"><i class="bi bi-eye"></i> Read-only</span>`;
+  }
+  if (lastAudit) render(lastAudit);
+  renderLogs();
+  updateLogBlock();
+  if ($('t-hist').classList.contains('active')) loadHistory();
+}
+
+async function logout() {
+  await postJson('/logout', {});
+  await loadSession();
+  toast('info', 'Logged out', 'You are back in read-only mode.');
+}
+
+/* ---------- Login dialog ---------- */
+let loginCb = null, loginOk = false;
+const loginEl = $('loginModal');
+function openLogin(cb, hint, from) {
+  loginCb = cb || null; loginOk = false;
+  $('loginErr').textContent = ''; $('loginPw').value = '';
+  $('loginHint').innerHTML = hint ? esc(hint) : 'Log in to apply fixes and read raw logs. This is the admin password set with <code>python app.py --set-password</code>.';
+  swapModal(from || null, loginEl);
+}
+loginEl.addEventListener('shown.bs.modal', () => $('loginPw').focus());
+loginEl.addEventListener('hidden.bs.modal', () => {
+  const cb = loginCb; loginCb = null;
+  if (loginOk && cb) cb();
+});
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('loginBtn'); btn.disabled = true; $('loginErr').textContent = '';
+  const r = await postJson('/login', {password: $('loginPw').value});
+  btn.disabled = false;
+  if (r.ok) {
+    $('loginPw').value = ''; loginOk = true;
+    await loadSession();
+    bootstrap.Modal.getOrCreateInstance(loginEl).hide();
+  } else {
+    $('loginErr').textContent = r.status === 429 ? msgOf(r.data, 'Too many wrong passwords. Wait 5 minutes and try again.')
+      : r.status === 404 || r.status === 0 ? msgOf(r.data, 'Login is not available on this server.')
+      : msgOf(r.data, 'Wrong password.');
+    $('loginPw').select();
+  }
+});
+
+// Show `to` after `from` has finished hiding (Bootstrap cannot stack two modals cleanly).
+function swapModal(from, to) {
+  const t = bootstrap.Modal.getOrCreateInstance(to);
+  if (from && from.classList.contains('show')) {
+    from.addEventListener('hidden.bs.modal', () => t.show(), {once:true});
+    bootstrap.Modal.getOrCreateInstance(from).hide();
+  } else t.show();
+}
+
+/* ---------- Toasts ---------- */
+function toast(kind, title, msg) {
+  const map = {success:['success','bi-check-circle-fill'], info:['info','bi-info-circle-fill'], warning:['warning','bi-arrow-counterclockwise'], danger:['danger','bi-x-octagon-fill']};
+  const [c, icon] = map[kind] || map.info;
+  const el = document.createElement('div');
+  el.className = 'toast border-' + c; el.setAttribute('role', kind === 'danger' ? 'alert' : 'status');
+  el.setAttribute('aria-live', kind === 'danger' ? 'assertive' : 'polite'); el.setAttribute('aria-atomic', 'true');
+  el.innerHTML = `<div class="toast-header"><i class="bi ${icon} text-${c} me-2"></i><strong class="me-auto">${esc(title)}</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button></div>
+    <div class="toast-body">${esc(msg)}</div>`;
+  $('toasts').appendChild(el);
+  el.addEventListener('hidden.bs.toast', () => el.remove());
+  new bootstrap.Toast(el, {delay: kind === 'danger' ? 10000 : 6000}).show();
+}
+
+/* ---------- Fix buttons ---------- */
+function fixState() {
+  if (!S.fixes_enabled) return {mode:'off', reason:'Fixes are turned off. Set an admin password with: python app.py --set-password'};
+  if (!S.is_root) return {mode:'off', reason:'Run the server with sudo to apply fixes'};
+  if (!S.logged_in) return {mode:'login', reason:'Log in as admin to apply this fix'};
+  return {mode:'ok', reason:''};
+}
+function fixBtn(fixId, params, label) {
+  const st = fixState();
+  const data = `data-fix="${esc(fixId)}" data-params="${esc(JSON.stringify(params || {}))}"`;
+  label = label || 'Fix';
+  if (st.mode === 'off')
+    return `<span class="fix-wrap" tabindex="0" title="${esc(st.reason)}" aria-label="${esc(label)} (unavailable: ${esc(st.reason)})"><button type="button" class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-wrench-adjustable"></i> ${esc(label)}</button></span>`;
+  if (st.mode === 'login')
+    return `<button type="button" class="btn btn-sm btn-fix-locked btn-outline-secondary fix-btn" ${data} title="${esc(st.reason)}"><i class="bi bi-lock"></i> Log in to fix</button>`;
+  return `<button type="button" class="btn btn-sm btn-outline-info btn-fix fix-btn" ${data}><i class="bi bi-wrench-adjustable"></i> ${esc(label)}</button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.fix-btn');
+  if (b) {
+    let params = {}; try { params = JSON.parse(b.dataset.params || '{}'); } catch (x) {}
+    startFix(b.dataset.fix, params);
+    return;
+  }
+  const ipb = e.target.closest('.ip-link');
+  if (ipb) setLogIp(ipb.dataset.ip);
+});
+function startFix(fixId, params) {
+  const st = fixState();
+  if (st.mode === 'login') { openLogin(() => openFix(fixId, params), 'Log in to continue with this fix.'); return; }
+  if (st.mode === 'ok') openFix(fixId, params);
+}
+
+/* ---------- Fix confirm modal ---------- */
+const fixEl = $('fixModal');
+let M = null; // {mode:'fix'|'undo', fixId, params, recordId, plan}
+function diffHtml(d) {
+  const text = Array.isArray(d) ? d.join('\n') : String(d ?? '');
+  if (!text.trim()) return '<span class="ctx">No file contents change.</span>';
+  return text.split('\n').map(l => {
+    const cls = /^\+(?!\+\+)/.test(l) ? 'add' : /^-(?!--)/.test(l) ? 'del' : 'ctx';
+    return `<span class="${cls}">${esc(l) || ' '}</span>`;
+  }).join('');
+}
+function fixUiReset() {
+  $('fixLoading').classList.remove('d-none'); $('fixBody').classList.add('d-none');
+  $('fixErr').classList.add('d-none'); $('fixNotice').classList.add('d-none');
+  $('fixAck').checked = false; $('fixAckWrap').classList.add('d-none');
+  $('fixApply').disabled = true; $('fixSpin').classList.add('d-none');
+  $('fixApplyLbl').textContent = M && M.mode === 'undo' ? 'Undo this fix' : 'Apply fix';
+}
+function fixShowError(msg) {
+  $('fixLoading').classList.add('d-none');
+  $('fixErr').textContent = msg; $('fixErr').classList.remove('d-none');
+}
+function fillRisk(risk, note) {
+  const box = $('fixRisk');
+  box.className = 'alert py-2 alert-' + (risk === 'high' ? 'danger' : risk === 'medium' ? 'warning' : 'secondary');
+  box.innerHTML = `<strong>${risk === 'high' ? 'High risk. ' : risk === 'medium' ? 'Be careful. ' : 'Low risk. '}</strong>${esc(note || 'This change can be undone from the Fix history tab.')}`;
+  const needAck = risk === 'high';
+  $('fixAckWrap').classList.toggle('d-none', !needAck);
+  $('fixAck').checked = false;
+  $('fixApply').disabled = needAck;
+}
+$('fixAck').addEventListener('change', () => { $('fixApply').disabled = !$('fixAck').checked; });
+
+async function openFix(fixId, params) {
+  M = {mode:'fix', fixId, params: params || {}, plan: null};
+  $('fixTitle').textContent = FIX_TITLES[fixId] || 'Fix';
+  fixUiReset();
+  bootstrap.Modal.getOrCreateInstance(fixEl).show();
+  const r = await postJson('/api/fix/plan', {fix_id: fixId, params: M.params});
+  if (r.status === 401) { M.expired = true; openLogin(() => openFix(fixId, params), 'Your session ended. Log in again to continue.', fixEl); return; }
+  if (!r.ok) { fixShowError(msgOf(r.data, r.status === 404 ? 'Fixes are not available on this server yet.' : 'Could not prepare this fix.')); return; }
+  const p = M.plan = r.data;
+  $('fixTitle').textContent = (p.title || FIX_TITLES[fixId] || 'Fix') + (M.params.ip ? ' ' + M.params.ip : '');
+  $('fixSummary').textContent = p.summary || '';
+  $('fixDiffWrap').classList.remove('d-none');
+  $('fixDiff').innerHTML = diffHtml(p.diff);
+  fillRisk(p.risk, p.risk_note);
+  $('fixLoading').classList.add('d-none'); $('fixBody').classList.remove('d-none');
+  if (p.risk !== 'high') $('fixApply').disabled = false;
+  $('fixApply').focus();
+}
+
+function openUndo(rec) {
+  M = {mode:'undo', recordId: rec.__id, params: {}, plan: null};
+  fixUiReset();
+  const title = rec.title || FIX_TITLES[rec.fix_id] || rec.fix_id || 'this fix';
+  $('fixTitle').textContent = 'Undo: ' + title;
+  $('fixSummary').textContent = `This will put back what was there before "${title}" was applied.`;
+  const files = Array.isArray(rec.files) ? rec.files : [];
+  $('fixDiffWrap').classList.toggle('d-none', !files.length);
+  $('fixDiff').innerHTML = files.map(f => `<span class="ctx">${esc(typeof f === 'string' ? f : (f.path || JSON.stringify(f)))}</span>`).join('');
+  fillRisk('low', 'The saved backup is restored. Anything you changed in these files since the fix will be overwritten.');
+  $('fixApplyLbl').textContent = 'Undo this fix';
+  $('fixLoading').classList.add('d-none'); $('fixBody').classList.remove('d-none');
+  $('fixApply').disabled = false;
+  bootstrap.Modal.getOrCreateInstance(fixEl).show();
+}
+
+$('fixApply').addEventListener('click', async () => {
+  if (!M) return;
+  $('fixApply').disabled = true; $('fixSpin').classList.remove('d-none'); $('fixErr').classList.add('d-none');
+  const undo = M.mode === 'undo';
+  const r = undo ? await postJson('/api/fix/undo', {record_id: M.recordId})
+                 : await postJson('/api/fix/apply', {fix_id: M.fixId, params: M.params});
+  $('fixSpin').classList.add('d-none');
+  if (r.status === 401) {
+    // Session ended while the dialog was open: log in, then bring the same dialog back.
+    $('fixApply').disabled = M.plan && M.plan.risk === 'high' && !$('fixAck').checked;
+    openLogin(() => {
+      $('fixNotice').textContent = 'You are logged in again. Review the change and apply it when you are ready.';
+      $('fixNotice').classList.remove('d-none');
+      bootstrap.Modal.getOrCreateInstance(fixEl).show();
+    }, 'Your session ended. Log in again and your fix will still be here.', fixEl);
+    return;
+  }
+  if (!r.ok) {
+    $('fixApply').disabled = false;
+    fixShowError(msgOf(r.data, 'The server refused this request.'));
+    $('fixBody').classList.remove('d-none');
+    return;
+  }
+  bootstrap.Modal.getOrCreateInstance(fixEl).hide();
+  const res = r.data.result || 'applied', msg = r.data.message || '';
+  if (res === 'applied') toast('success', undo ? 'Undone' : 'Applied', msg || (undo ? 'The previous state was restored.' : 'The fix was applied and checked.'));
+  else if (res === 'already_applied') toast('info', 'Already applied', msg || 'Nothing needed to change.');
+  else if (res === 'reverted') toast('warning', 'Reverted', msg || 'The change did not pass its check, so it was rolled back.');
+  else toast('danger', "Couldn't apply", msg || 'Something went wrong. Nothing was left half-changed.');
+  runAudit(); loadHistory();
+});
+
+/* ---------- History ---------- */
+const recId = r => r.id ?? r.record_id ?? r.name ?? r.backup_dir;
+async function loadHistory() {
+  const box = $('histBox');
+  if (!S.fixes_enabled) { box.innerHTML = 'Fixes are turned off, so there is no history. Set an admin password with <code>python app.py --set-password</code> to enable them.'; return; }
+  if (!S.logged_in) { box.innerHTML = 'Log in to see the fix history. <button class="btn btn-sm btn-outline-info ms-1" id="histLogin">Log in</button>'; $('histLogin').onclick = () => openLogin(loadHistory); return; }
+  let r;
+  try { r = await fetch('/api/fix/history', {credentials:'same-origin'}); }
+  catch (e) { box.textContent = 'Cannot reach the server.'; return; }
+  if (r.status === 404) { box.textContent = 'Fix history is not available on this server yet.'; return; }
+  if (r.status === 401) { box.textContent = 'Your session ended. Log in again to see the history.'; return; }
+  let list = []; try { const j = await r.json(); list = Array.isArray(j) ? j : (j.records || j.history || []); } catch (e) {}
+  if (!r.ok) { box.textContent = 'Could not load the history.'; return; }
+  if (!list.length) { box.textContent = 'No fixes applied yet. When you apply one from a Fix button it will show up here.'; return; }
+  const resBadge = {applied:'success', undone:'secondary', reverted:'warning', error:'danger', already_applied:'info', needs_manual_attention:'danger'};
+  box.innerHTML = `<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>When</th><th>Fix</th><th>Result</th><th></th></tr></thead><tbody>` +
+    list.map((r, i) => {
+      const id = recId(r); r.__id = id;
+      const res = r.undone ? 'undone' : (r.result || 'applied');
+      const params = r.params && Object.keys(r.params).length ? ' <code>' + esc(Object.values(r.params).join(', ')) + '</code>' : '';
+      const canUndo = i < 20 && !r.undone && !['undone','reverted','error','already_applied'].includes(res) && id != null;
+      return `<tr><td class="term">${esc(String(r.time || r.timestamp || '').replace('T', ' ').slice(0, 19))}</td>
+        <td>${esc(r.title || FIX_TITLES[r.fix_id] || r.fix_id)}${params}</td>
+        <td><span class="badge text-bg-${resBadge[res] || 'secondary'}">${esc(String(res).replace(/_/g, ' '))}</span>${res === 'needs_manual_attention' && r.backup_dir ? `<br><small>Backup: <code>${esc(r.backup_dir)}</code></small>` : ''}</td>
+        <td class="text-end">${canUndo ? `<button class="btn btn-sm btn-outline-warning" data-undo="${i}"><i class="bi bi-arrow-counterclockwise"></i> Undo</button>` : ''}</td></tr>`;
+    }).join('') + '</tbody></table></div>';
+  box.querySelectorAll('[data-undo]').forEach(b => b.onclick = () => {
+    const st = fixState();
+    if (st.mode === 'off') { toast('warning', 'Undo unavailable', st.reason); return; }
+    if (st.mode === 'login') { openLogin(() => openUndo(list[+b.dataset.undo])); return; }
+    openUndo(list[+b.dataset.undo]);
+  });
+}
+$('histReload').onclick = loadHistory;
+$('tabHist').addEventListener('shown.bs.tab', loadHistory);
+
+/* ---------- Log viewer ---------- */
+let logRows = [], logCursor = null, logReq = 0, logLevel = '', logTimer = null, logQShown = '', logIpShown = '', logLoadedOnce = false;
+function logParams(older) {
+  const p = new URLSearchParams();
+  p.set('source', $('logSource').value);
+  const q = $('logQ').value.trim(); if (q) p.set('q', q);
+  if (logLevel) p.set('level', logLevel);
+  const ip = $('logIp').value.trim(); if (ip) p.set('ip', ip);
+  const h = +$('logRange').value;
+  if (h) {
+    const d = new Date(Date.now() - h * 3600e3), z = n => String(n).padStart(2, '0');
+    p.set('since', `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`);
+  }
+  if (older && logCursor) p.set('before', logCursor);
+  return p;
+}
+function logState(icon, text, extra) {
+  $('logList').innerHTML = `<div class="log-state"><i class="bi ${icon}"></i>${esc(text)}${extra || ''}</div>`;
+  $('logOlder').classList.add('d-none');
+}
+function richMsg(text, q, ip) {
+  text = String(text ?? ''); const marks = [];
+  if (ip) { const i = text.indexOf(ip); if (i >= 0) marks.push({s:i, e:i + ip.length, t:'ip'}); }
+  if (q) { const lt = text.toLowerCase(), lq = q.toLowerCase(); let p = 0, i;
+    while ((i = lt.indexOf(lq, p)) >= 0) { marks.push({s:i, e:i + lq.length, t:'q'}); p = i + lq.length; } }
+  marks.sort((a, b) => a.s - b.s || (a.t === 'ip' ? -1 : 1));
+  let out = '', pos = 0;
+  for (const m of marks) {
+    if (m.s < pos) continue;
+    out += esc(text.slice(pos, m.s));
+    const seg = text.slice(m.s, m.e);
+    out += m.t === 'ip'
+      ? `<button type="button" class="ip-link" data-ip="${esc(ip)}" title="Show only lines with this IP">${esc(seg)}</button>`
+      : `<mark>${esc(seg)}</mark>`;
+    pos = m.e;
+  }
+  return out + esc(text.slice(pos));
+}
+function renderLogs() {
+  if (!logRows.length) return;
+  const canBlock = fixState().mode === 'ok';
+  $('logList').innerHTML = logRows.map((e, i) => {
+    const lv = ['ERROR','WARN','INFO'].includes(e.level) ? e.level : 'INFO';
+    const blk = canBlock && e.ip && String(e.message || '').indexOf(e.ip) >= 0
+      ? ` <button type="button" class="btn btn-sm btn-fix btn-outline-info py-0 px-1 fix-btn" data-fix="ufw.block_ip" data-params="${esc(JSON.stringify({ip:e.ip}))}" title="Block ${esc(e.ip)} in the firewall"><i class="bi bi-slash-circle"></i> Block IP</button>` : '';
+    return `<div class="log-row lv-${lv}">
+      <span class="log-time" title="${esc(e.time)}">${esc(e.time)}</span>
+      <span class="log-lvl">${badge(lv)}</span>
+      <span class="log-proc" title="${esc((e.host ? e.host + ' ' : '') + (e.process || ''))}">${esc(e.process || e.host || '')}</span>
+      <span class="log-msg">${richMsg(e.message, logQShown, e.ip)}${blk}</span>
+      <button type="button" class="btn btn-sm btn-link text-secondary p-0 copy-line" data-copy="${i}" title="Copy this line" aria-label="Copy this line"><i class="bi bi-clipboard"></i></button>
+    </div>`;
+  }).join('');
+  $('logOlder').classList.toggle('d-none', !logCursor);
+}
+async function loadLogs(older) {
+  const my = ++logReq;
+  const silent = logRows.length && !older;           // keep old rows on screen while refreshing
+  if (!silent && !older) logState('bi-hourglass-split', 'Loading log lines...');
+  if (older) $('logOlder').disabled = true;
+  logQShown = $('logQ').value.trim(); logIpShown = $('logIp').value.trim();
+  let r, data = null;
+  try { r = await fetch('/api/logs/view?' + logParams(older).toString(), {credentials:'same-origin'}); }
+  catch (e) { if (my === logReq) { logRows = []; logCursor = null; logState('bi-wifi-off', 'Cannot reach the server. Check that SecNet-Auditor is still running.'); } $('logOlder').disabled = false; return; }
+  try { data = await r.json(); } catch (e) {}
+  if (my !== logReq) return;
+  $('logOlder').disabled = false;
+  if (r.status === 401) {
+    logRows = []; logCursor = null;
+    logState('bi-lock', 'Raw logs need an admin login once a password is set.', ' <div class="mt-2"><button type="button" class="btn btn-sm btn-outline-info" id="logLogin">Log in</button></div>');
+    $('logLogin').onclick = () => openLogin(() => loadLogs()); $('logStatus').textContent = ''; return;
+  }
+  if (r.status === 404) { logRows = []; logCursor = null; logState('bi-tools', 'The log viewer is not available on this server yet.'); return; }
+  if (!r.ok || !data || data.status === 'ERROR') {
+    logRows = []; logCursor = null;
+    logState('bi-exclamation-triangle', msgOf(data, 'Could not read this log.'));
+    $('logStatus').textContent = ''; return;
+  }
+  const entries = Array.isArray(data.entries) ? data.entries : [];
+  if (older) { logRows = logRows.concat(entries); if (!entries.length) toast('info', 'No older lines', 'You have reached the start of this log.'); }
+  else logRows = entries;
+  logCursor = data.cursor || null;
+  logLoadedOnce = true;
+  if (!logRows.length) {
+    const filtered = logQShown || logIpShown || logLevel || +$('logRange').value;
+    logState('bi-search', data.message || (filtered ? 'No lines match these filters. Try a wider time range or clear the search.' : 'This log is empty.'));
+    $('logStatus').textContent = ''; return;
+  }
+  $('logStatus').textContent = `Showing ${logRows.length} line${logRows.length === 1 ? '' : 's'}, newest first.` + (data.message ? ' ' + data.message : '');
+  renderLogs();
+}
+function setLogIp(ip) {
+  $('logIp').value = ip || '';
+  bootstrap.Tab.getOrCreateInstance($('tabLogView')).show();
+  updateLogBlock(); loadLogs();
+}
+function updateLogBlock() {
+  const ip = $('logIp').value.trim();
+  $('logBlock').innerHTML = ip && fixState().mode === 'ok' ? fixBtn('ufw.block_ip', {ip}, 'Block ' + ip) : '';
+}
+function syncLogTimer() {
+  clearInterval(logTimer); logTimer = null;
+  const active = $('t-logview').classList.contains('active') && !document.hidden;
+  if ($('logAuto').checked && active) logTimer = setInterval(() => loadLogs(), 5000);
+}
+let logDebounce = null;
+const reloadSoon = () => { clearTimeout(logDebounce); logDebounce = setTimeout(() => loadLogs(), 350); };
+$('logQ').addEventListener('input', reloadSoon);
+$('logIp').addEventListener('input', () => { updateLogBlock(); reloadSoon(); });
+$('logIpClear').onclick = () => { $('logIp').value = ''; updateLogBlock(); loadLogs(); };
+$('logSource').onchange = () => loadLogs();
+$('logRange').onchange = () => loadLogs();
+$('logReload').onclick = () => loadLogs();
+$('logOlder').onclick = () => loadLogs(true);
+$('logAuto').onchange = syncLogTimer;
+document.addEventListener('visibilitychange', syncLogTimer);
+document.querySelectorAll('.chip').forEach(c => c.onclick = () => {
+  logLevel = c.dataset.level;
+  document.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === c)));
+  loadLogs();
+});
+$('tabLogView').addEventListener('shown.bs.tab', () => { if (!logLoadedOnce) loadLogs(); syncLogTimer(); });
+$('tabLogView').addEventListener('hidden.bs.tab', syncLogTimer);
+$('logList').addEventListener('click', async e => {
+  const b = e.target.closest('[data-copy]'); if (!b) return;
+  const x = logRows[+b.dataset.copy]; if (!x) return;
+  const text = [x.time, x.host, x.process ? x.process + ':' : '', x.message].filter(Boolean).join(' ');
+  try { await navigator.clipboard.writeText(text); }
+  catch (err) { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (z) {} t.remove(); }
+  b.innerHTML = '<i class="bi bi-check2 text-success"></i>'; setTimeout(() => { b.innerHTML = '<i class="bi bi-clipboard"></i>'; }, 1200);
+});
+$('logDl').onclick = async () => {
+  const p = logParams(false); p.set('limit', '1000');
+  let r;
+  try { r = await fetch('/api/logs/download?' + p.toString(), {credentials:'same-origin'}); }
+  catch (e) { toast('danger', "Couldn't download", 'Cannot reach the server.'); return; }
+  if (r.status === 401) { openLogin($('logDl').onclick); return; }
+  if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch (e) {} toast('danger', "Couldn't download", m || 'The log could not be exported.'); return; }
+  const url = URL.createObjectURL(await r.blob()), a = document.createElement('a');
+  a.href = url; a.download = $('logSource').value + '-filtered.log'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+};
+
+/* ---------- Audit ---------- */
 function card(id, status, value, detail) {
-  $('c-'+id).className = 'card card-sum p-3 st-' + status;
+  $('c-'+id).className = 'card card-sum p-3 h-100 st-' + status;
   $('v-'+id).textContent = value; $('d-'+id).textContent = detail;
 }
 
@@ -118,12 +720,16 @@ async function runAudit() {
 }
 
 function render(d) {
+  lastAudit = d;
   $('ts').textContent = 'Last audit: ' + d.timestamp;
   $('rootBadge').className = 'badge text-bg-' + (d.is_root ? 'success' : 'warning');
   $('rootBadge').textContent = d.is_root ? 'root' : 'no root (limited data)';
-  const n = d.network, h = d.hardening, l = d.logs;
+  const n = d.network, h = d.hardening, l = d.logs, sv = d.services || {};
 
   card('net', n.status, n.status, `DNS: ${esc(n.dns?.resolution_test)} · ${n.interfaces?.interfaces?.length ?? 0} interfaces`);
+  const parts = ['ssh','ports','dhcp','ntp','web'];
+  const nWarn = parts.filter(k => sv[k] && sv[k].status !== 'OK').length;
+  card('svc', sv.status || 'NONE', sv.status || '—', nWarn ? `${nWarn} of ${parts.length} checks need attention` : (sv.message || 'All checks passed'));
   const ufw = h.ufw || {};
   card('fw', h.status, ufw.active === true ? 'UFW active' : ufw.active === false ? 'UFW inactive' : 'UFW ?', ufw.message || '');
   const nAl = (l.alerts || []).length;
@@ -136,27 +742,50 @@ function render(d) {
     <tr data-ip="${esc(r.ip)}"><td><code>${esc(r.ip)}</code>${r.compromised ? ' <i class="bi bi-exclamation-octagon-fill text-danger" title="Successful login from this IP"></i>' : ''}</td>
     <td>${r.attempts}</td><td>${esc((r.users||[]).join(', '))}</td><td>${esc(r.last_seen)}</td>
     <td><span class="badge text-bg-${sev[r.severity]}">${r.severity}</span></td>
-    <td class="term">${r.action ? esc(r.action) : '—'}</td></tr>`).join('')
-    : `<tr><td colspan="6" class="text-secondary">${esc(l.message || 'No data')}</td></tr>`;
+    <td class="term">${r.action ? esc(r.action) : '—'}</td>
+    <td class="text-nowrap">${fixBtn('ufw.block_ip', {ip: r.ip}, 'Block IP')}
+      <button type="button" class="btn btn-sm btn-link text-secondary" onclick="setLogIp(this.closest('tr').dataset.ip)" title="See this IP in the Logs tab"><i class="bi bi-journal-text"></i></button></td></tr>`).join('')
+    : `<tr><td colspan="7" class="text-secondary">${esc(l.message || 'No data')}</td></tr>`;
   $('logInfo').textContent = `Log: ${l.log_path} · ${l.lines_analyzed} lines · ${l.total_failed} failures · threshold ${l.threshold}`;
+  filterRows();
 
   // Network
   const np = n.netplan || {};
-  $('tblNetplan').querySelector('tbody').innerHTML = (np.files||[]).map(f => `<tr><td class="term">${esc(f.file)}</td>
+  $('tblNetplan').querySelector('tbody').innerHTML = (np.files||[]).map(f => {
+    const loose = /^[0-7]+$/.test(String(f.perms)) && (parseInt(f.perms, 8) & 0o077);
+    return `<tr><td class="term">${esc(f.file)}</td>
     <td>${f.dhcp === null ? '-' : f.dhcp}</td><td>${esc((f.addresses||[]).join(', '))}</td><td>${esc(f.gateway)}</td>
-    <td>${esc(f.perms)}</td><td>${f.issues.length ? badge('WARN') + '<br><small>' + f.issues.map(esc).join('<br>') + '</small>' : badge('OK')}</td></tr>`).join('');
+    <td>${esc(f.perms)}</td><td>${f.issues.length ? badge('WARN') + '<br><small>' + f.issues.map(esc).join('<br>') + '</small>' : badge('OK')}${loose ? '<br>' + fixBtn('perms.fix_file', {file: f.file}, 'Fix permissions') : ''}</td></tr>`;
+  }).join('');
   $('netplanMsg').textContent = np.message || '';
   const dns = n.dns || {};
-  $('dnsBox').innerHTML = `${badge(dns.status)} ${esc(dns.message)}<br>Nameservers: ${esc((dns.nameservers||[]).join(', ') || 'none')}<br>Search: ${esc((dns.search||[]).join(', '))}<br>Resolution test: ${esc(dns.resolution_test)}`;
+  $('dnsBox').innerHTML = `${badge(dns.status)} ${esc(dns.message)}<br>Nameservers: ${esc((dns.nameservers||[]).join(', ') || 'none')}<br>Search: ${esc((dns.search||[]).join(', '))}<br>Resolution test: ${esc(dns.resolution_test)}`
+    + `<br>Probes: ${(dns.probes||[]).map(p => esc(p.server) + ' ' + (p.latency_ms === null ? 'unreachable' : p.latency_ms + ' ms')).join(' · ') || '-'}`
+    + `<br>Resolver: ${dns.systemd_resolved ? 'systemd-resolved' : 'direct'} · DNSSEC: ${esc(dns.dnssec)} · DoT: ${esc(dns.dns_over_tls)}`;
   $('tblIf').querySelector('tbody').innerHTML = (n.interfaces?.interfaces||[]).map(i => `<tr><td>${esc(i.name)}</td>
     <td>${badge(i.state === 'UP' ? 'OK' : i.state === 'UNKNOWN' ? 'INFO' : 'WARN').replace(/>[A-Z]+</, '>' + esc(i.state) + '<')}</td><td class="term">${esc(i.mac)}</td><td>${esc(i.mtu)}</td></tr>`).join('');
 
+  // Services (SSH issues may be plain strings or {text, fix_id})
+  const ssh = sv.ssh || {}, ntp = sv.ntp || {}, dhcp = sv.dhcp || {}, web = sv.web || {}, ports = sv.ports || {};
+  const issueLine = i => {
+    const o = (i && typeof i === 'object') ? i : {text: i};
+    return '<div class="mt-1">• ' + esc(o.text) + (o.fix_id ? ' ' + fixBtn(o.fix_id, o.params || {}, 'Fix') : '') + '</div>';
+  };
+  $('sshBox').innerHTML = `${badge(ssh.status)} ${esc(ssh.message)}<br>Port: ${esc(ssh.port)}` + (ssh.issues||[]).map(issueLine).join('');
+  $('ntpBox').innerHTML = `NTP: ${badge(ntp.status)} ${esc(ntp.message)} (tz ${esc(ntp.timezone)})` + (ntp.fix_id ? ' ' + fixBtn(ntp.fix_id, {}, 'Turn on time sync') : '') + `<br>DHCP: ${badge(dhcp.status)} ${esc(dhcp.message)}`;
+  $('webBox').innerHTML = `${badge(web.status)} ${esc(web.message)}` + (web.issues||[]).map(i => '<br>• ' + esc(typeof i === 'object' && i ? i.text : i)).join('');
+  $('tblPorts').querySelector('tbody').innerHTML = (ports.listeners||[]).map(p => `<tr><td>${esc(p.proto)}</td>
+    <td class="term">${esc(p.address)}</td><td>${p.port}</td><td>${p.exposed ? 'yes' : 'no'}</td>
+    <td>${badge(p.status)}</td><td><small>${esc(p.insecure || '')}</small></td></tr>`).join('')
+    || `<tr><td colspan="6" class="text-secondary">${esc(ports.message || 'No data')}</td></tr>`;
+
   // Hardening
-  $('ufwBox').innerHTML = `${badge(ufw.status)} ${esc(ufw.message)}<br>` + (ufw.rules||[]).map(esc).join('<br>');
+  $('ufwBox').innerHTML = `${badge(ufw.status)} ${esc(ufw.message)}` + (ufw.active === false ? ' ' + fixBtn('ufw.enable', {}, 'Turn on firewall') : '') + `<br>` + (ufw.rules||[]).map(esc).join('<br>');
   const u = h.uid0 || {};
   $('uidBox').innerHTML = `${badge(u.status)} ${esc(u.message)}<br>UID 0: ${esc((u.uid0_users||[]).join(', '))}`;
   $('tblPerm').querySelector('tbody').innerHTML = ((h.permissions||{}).files||[]).map(f => `<tr><td class="term">${esc(f.file)}</td>
-    <td>${esc(f.expected)}</td><td>${esc(f.actual)}</td><td>${badge(f.status)}</td><td><small>${esc(f.note)}</small></td></tr>`).join('');
+    <td>${esc(f.expected)}</td><td>${esc(f.actual)}</td><td>${badge(f.status)}</td><td><small>${esc(f.note)}</small></td>
+    <td>${f.status !== 'OK' && f.actual !== '-' ? fixBtn('perms.fix_file', {file: f.file}, 'Fix') : ''}</td></tr>`).join('');
 
   if (!d.is_root) $('alertBox').innerHTML = '<div class="alert alert-warning py-2"><i class="bi bi-info-circle"></i> Running without root privileges: UFW, auth.log and some files may be inaccessible.</div>';
 }
@@ -165,7 +794,7 @@ function filterRows() {
   const q = $('filterIp').value.trim();
   document.querySelectorAll('#tblLogs tbody tr[data-ip]').forEach(tr => tr.style.display = tr.dataset.ip.includes(q) ? '' : 'none');
 }
-runAudit();
+loadSession().then(runAudit);
 </script>
 </body>
 </html>

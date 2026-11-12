@@ -22,7 +22,8 @@ def check_ufw():
         res.update(status="OK", active=True, message="Firewall active")
         res["rules"] = [l.strip() for l in out.splitlines()[3:] if l.strip() and not l.startswith("--")]
     elif "inactive" in out:
-        res.update(status="ERROR", active=False, message="Firewall INACTIVE: enable it (see README)")
+        res.update(status="ERROR", active=False, fix_id="ufw.enable",
+                   message="Firewall INACTIVE: enable it (see README)")
     else:
         res["message"] = out or "Unknown status"
     return res

@@ -10,6 +10,28 @@
     "resolv_conf": "/etc/resolv.conf",
     "dns_test_host": "debian.org"
   },
+  "services": {
+    "ssh_config_path": "/etc/ssh/sshd_config",
+    "max_auth_tries": 4,
+    "insecure_ports": { "8080": "Alternative HTTP (cleartext)" },
+    "web_check_urls": ["http://127.0.0.1", "https://127.0.0.1"]
+  },
+  "auth": { "password_hash": "", "session_minutes": 30 },
+  "fixes": {
+    "ssh_dropin_dir": "/etc/ssh/sshd_config.d",
+    "backup_dir": "backups",
+    "block_private_ips": true
+  },
+  "logs": {
+    "sources": {
+      "auth": { "type": "file", "path": "/var/log/auth.log" },
+      "syslog": { "type": "file", "path": "/var/log/syslog" },
+      "ssh": { "type": "journal", "unit": "ssh" },
+      "ufw": { "type": "file", "path": "/var/log/ufw.log" },
+      "fixes": { "type": "file", "path": "fixes.log" }
+    },
+    "default_limit": 200
+  },
   "hardening": {
     "critical_files": {
       "/etc/passwd": "644",

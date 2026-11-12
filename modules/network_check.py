@@ -3,7 +3,10 @@ import glob
 import json
 import os
 import re
+import socket
+import struct
 import subprocess
+import time
 
 
 def _run(cmd, timeout=8):
@@ -57,8 +60,41 @@ def check_netplan(cfg):
     return result
 
 
+def build_dns_query(host, qid=0x1234):
+    """Build a minimal UDP DNS A-record query packet."""
+    header = struct.pack(">HHHHHH", qid, 0x0100, 1, 0, 0, 0)
+    qname = b"".join(bytes([len(p)]) + p.encode("ascii") for p in host.strip(".").split("."))
+    return header + qname + b"\x00" + struct.pack(">HH", 1, 1)
+
+
+def probe_nameserver(server, host, timeout=2.0):
+    """Query one nameserver directly. Returns latency in ms, or None if unreachable."""
+    try:
+        family = socket.AF_INET6 if ":" in server else socket.AF_INET
+        with socket.socket(family, socket.SOCK_DGRAM) as s:
+            s.settimeout(timeout)
+            start = time.monotonic()
+            s.sendto(build_dns_query(host), (server, 53))
+            data, _ = s.recvfrom(512)
+            if len(data) >= 12 and data[:2] == b"\x12\x34":
+                return round((time.monotonic() - start) * 1000, 1)
+    except (OSError, UnicodeError):
+        pass
+    return None
+
+
+def parse_resolvectl(text):
+    """Extract DNSSEC / DNS-over-TLS settings from `resolvectl status` output."""
+    out = {}
+    for key, name in (("DNSSEC setting", "dnssec"), ("DNSOverTLS setting", "dns_over_tls")):
+        m = re.search(rf"{key}:\s*(\S+)", text)
+        if m:
+            out[name] = m.group(1)
+    return out
+
+
 def check_dns(cfg):
-    """Read resolv.conf and run a real resolution test."""
+    """Read resolv.conf, run a resolution test and probe each nameserver."""
     net = cfg.get("network", {})
     path = net.get("resolv_conf", "/etc/resolv.conf")
     result = {"status": "OK", "nameservers": [], "search": [], "resolution_test": None, "message": ""}
@@ -79,6 +115,30 @@ def check_dns(cfg):
     result["resolution_test"] = "OK" if ok else "FAIL"
     if not ok and result["status"] == "OK":
         result.update(status="WARN", message="Name resolution is failing")
+
+    # Advanced checks: direct nameserver probes, resolver details, redundancy.
+    host = net.get("dns_test_host", "debian.org")
+    result["probes"] = []
+    for ns in result["nameservers"]:
+        # 127.0.0.53 is the systemd-resolved stub: probing it is still valid.
+        ms = probe_nameserver(ns, host)
+        result["probes"].append({"server": ns, "latency_ms": ms})
+    unreachable = [p["server"] for p in result["probes"] if p["latency_ms"] is None]
+    result["systemd_resolved"] = "127.0.0.53" in result["nameservers"]
+    result["dnssec"] = result["dns_over_tls"] = None
+    if result["systemd_resolved"]:
+        rok, rout = _run(["resolvectl", "status"])
+        if rok:
+            result.update(parse_resolvectl(rout))
+    notes = []
+    if unreachable:
+        notes.append("Unreachable nameserver(s): " + ", ".join(unreachable))
+    if len(result["nameservers"]) == 1 and not result["systemd_resolved"]:
+        notes.append("Only one nameserver configured (no redundancy)")
+    if notes and result["status"] == "OK":
+        result.update(status="WARN", message="; ".join(notes))
+    elif notes:
+        result["message"] = (result["message"] + "; " if result["message"] else "") + "; ".join(notes)
     return result
 
 
